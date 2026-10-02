@@ -27,10 +27,23 @@ static status_t OLED_I2C_Write(uint8_t control,
     transfer.dataSize       = dataSize;
     transfer.flags           = kLPI2C_TransferDefaultFlag;
 
-    return LPI2C_MasterTransferBlocking(
+//    return LPI2C_MasterTransferBlocking(
+//        LP_FLEXCOMM2_PERIPHERAL,
+//        &transfer
+//    );
+    status_t status;
+
+    status = LPI2C_MasterTransferBlocking(
         LP_FLEXCOMM2_PERIPHERAL,
         &transfer
     );
+
+    PRINTF("OLED I2C: control=0x%02X size=%u status=%d\r\n",
+           control,
+           (unsigned)dataSize,
+           status);
+
+    return status;
 }
 
 status_t OLED_Init(void)

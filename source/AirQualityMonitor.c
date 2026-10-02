@@ -39,7 +39,7 @@
 
 /* Rough starting threshold in millivolts - we'll tune this once we see real
  * MQ-135 readings in clean air vs. disturbed air. Above this = "bad" air. */
-#define AIR_QUALITY_THRESHOLD_MV 1500U
+#define AIR_QUALITY_THRESHOLD_MV 40U
 
 static void InitOutputPins(void)
 {
@@ -70,48 +70,102 @@ BOARD_InitDebugConsole();
 
 
 
-    InitOutputPins();
-    OLED_Init();
+    // InitOutputPins();
+    // OLED_Init();
 
-    OLED_Clear();
-    OLED_SetCursor(64,32);
-    OLED_Print("Hello");
-    OLED_SetFontSize(2);
-    OLED_Update();
+    //OLED_Clear();
+//    OLED_SetCursor(64,32);
+//    OLED_PrintInt(1234);
+//    OLED_SetFontSize(2);
+//    OLED_Update();
+    //status_t oled_status = OLED_Update();
 
+    //PRINTF("OLED update status = %d\r\n", oled_status);
 
+	InitOutputPins();
+
+	status_t oled_init_status = OLED_Init();
+	PRINTF("OLED INIT status = %d\r\n", oled_init_status);
+	PRINTF("kStatus_Success = %d\r\n", kStatus_Success);
+	OLED_Clear();
+
+	status_t oled_status = OLED_Update();
+	PRINTF("OLED UPDATE status = %d\r\n", oled_status);
 
     PRINTF("Air Quality Monitor starting...\r\n");
 
     while (1)
     {
+
         lpadc_conv_result_t result;
 
-        /* Trigger ADC0 Command 1 */
+        //Trigger ADC0 Command 1
         LPADC_DoSoftwareTrigger(ADC0_PERIPHERAL, 1U);
 
-        /* Wait for conversion result */
+        // Wait for conversion result */
         while (!LPADC_GetConvResult(ADC0_PERIPHERAL, &result, 0U))
         {
         }
 
-        /* LPADC result is left-justified */
+        // LPADC result is left-justified */
         uint32_t rawValue16 = result.convValue;
         uint32_t rawValue = rawValue16 >> 4;
 
-        /* Convert ADC reading to voltage */
+        // Convert ADC reading to voltage */
         uint32_t voltage_mV = (rawValue * 3300U) / 4095U;
 
-        /* Undo the 10k/10k voltage divider */
+        // Undo the 10k/10k voltage divider */
         uint32_t sensorVoltage_mV = voltage_mV * 2U;
 
         PRINTF("Raw: %u | ADC: %u mV | Sensor AO: %u mV\r\n",
                rawValue,
                voltage_mV,
                sensorVoltage_mV);
+        OLED_Clear();
 
+        OLED_SetCursor(0, 0);
+        OLED_Print("Sensor: ");
+        OLED_PrintInt(sensorVoltage_mV);
+        OLED_Print(" mV");
+
+        status_t oled_status_loop = OLED_Update();
+
+        PRINTF("OLED loop update status = %d\r\n", oled_status_loop);
+
+    	SDK_DelayAtLeastUs(500000U, CLOCK_GetFreq(kCLOCK_CoreSysClk));
+
+    	if (sensorVoltage_mV >= AIR_QUALITY_THRESHOLD_MV)
+    	{
+    	    // Poor air quality
+    	    GPIO_PinWrite(LED_GOOD_GPIO, LED_GOOD_PIN, 0U);
+    	    GPIO_PinWrite(LED_BAD_GPIO, LED_BAD_PIN, 1U);
+    	    GPIO_PinWrite(BUZZER_GPIO, BUZZER_PIN, 1U);
+    	    GPIO_PinWrite(FAN_GPIO, FAN_PIN, 1U);
+    	}
+    	else
+    	{
+    	    // Good air quality
+    	    GPIO_PinWrite(LED_GOOD_GPIO, LED_GOOD_PIN, 1U);
+    	    GPIO_PinWrite(LED_BAD_GPIO, LED_BAD_PIN, 0U);
+    	    GPIO_PinWrite(BUZZER_GPIO, BUZZER_PIN, 0U);
+    	    GPIO_PinWrite(FAN_GPIO, FAN_PIN, 0U);
+    	}
+
+//        OLED_Clear();
+//        OLED_SetCursor(0, 0);
+//        OLED_Print("aa");
+//        OLED_Update();
+//        OLED_Clear();
+//        OLED_SetCursor(0, 0);
+//        OLED_Print("Sensor: ");
+//        OLED_PrintInt(sensorVoltage_mV);
+//        OLED_Print(" mV");
+//        -OLED_Print("Raw16: ");
+//        -OLED_PrintInt(rawValue16);
+//        OLED_Update();
         /* Roughly 500 ms between readings */
-        SDK_DelayAtLeastUs(100000U, CLOCK_GetFreq(kCLOCK_CoreSysClk));
+        //tink
+        //SDK_DelayAtLeastUs(100000U, CLOCK_GetFreq(kCLOCK_CoreSysClk));
     }
 
 
