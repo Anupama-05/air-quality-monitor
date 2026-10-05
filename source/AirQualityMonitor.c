@@ -34,7 +34,7 @@
 #define BUZZER_PIN    23U
 /* FAN_CTRL : GPIO0, pin 21 (board header J1[10], labeled D4) - drives MOSFET gate */
 #define FAN_GPIO      GPIO0
-#define FAN_PIN       21U
+#define FAN_PIN       28U
 
 
 /* Rough starting threshold in millivolts - we'll tune this once we see real
@@ -83,6 +83,7 @@ BOARD_InitDebugConsole();
     //PRINTF("OLED update status = %d\r\n", oled_status);
 
 	InitOutputPins();
+	GPIO_PinWrite(FAN_GPIO, FAN_PIN, 1U);
 
 	status_t oled_init_status = OLED_Init();
 	PRINTF("OLED INIT status = %d\r\n", oled_init_status);
@@ -96,7 +97,15 @@ BOARD_InitDebugConsole();
 
     while (1)
     {
-
+//    	GPIO_PinWrite(FAN_GPIO, FAN_PIN, 1U);
+//
+//    	    OLED_Clear();
+//    	    OLED_SetCursor(0, 0);
+//    	    OLED_Print("FAN TEST");
+//    	    OLED_Update();
+//
+//    	    SDK_DelayAtLeastUs(500000U, CLOCK_GetFreq(kCLOCK_CoreSysClk));
+    	//here for fan
         lpadc_conv_result_t result;
 
         //Trigger ADC0 Command 1
@@ -150,6 +159,7 @@ BOARD_InitDebugConsole();
     	    GPIO_PinWrite(BUZZER_GPIO, BUZZER_PIN, 0U);
     	    GPIO_PinWrite(FAN_GPIO, FAN_PIN, 0U);
     	}
+    	//till here for fan
 
 //        OLED_Clear();
 //        OLED_SetCursor(0, 0);

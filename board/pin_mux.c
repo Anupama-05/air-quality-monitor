@@ -22,6 +22,7 @@ pin_labels:
 - {pin_num: N7, pin_signal: PIO4_6/TRIG_OUT4/FC2_P6/CT_INP18/SMARTDMA_PIO30/ADC0_A3/ADC1_A3, label: MQ135AIN_V2}
 - {pin_num: A8, pin_signal: PIO0_21/FC0_P5/FC1_P1/CT_INP1/FLEXIO0_D5/I3C0_SCL/ADC0_A13, label: FAN_CTRL}
 - {pin_num: C8, pin_signal: PIO0_20/WUU0_IN4/FC0_P4/FC1_P0/CT_INP0/FLEXIO0_D4/I3C0_SDA/ADC0_A12, label: SW2_UNUSED, identifier: SW2}
+- {pin_num: E8, pin_signal: PIO0_28/FC1_P4/FC0_P4/CT_INP0/ADC0_B20, label: 'P0_28/J2[3]', identifier: fan}
 - {pin_num: F8, pin_signal: PIO0_29/FC1_P5/FC0_P5/CT_INP1/ADC0_B21, label: 'P0_29/J2[1]', identifier: mq_sensor}
 - {pin_num: N11, pin_signal: PIO5_3/TRIG_IN11/RTC_CLKOUT/TAMPER1/ADC1_B11, label: MQ135AIN}
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS ***********
@@ -30,6 +31,7 @@ pin_labels:
 
 #include "fsl_common.h"
 #include "fsl_port.h"
+#include "fsl_gpio.h"
 #include "pin_mux.h"
 
 /* FUNCTION ************************************************************************************************************
@@ -67,6 +69,7 @@ BOARD_InitDEBUG_UARTPins:
   - {pin_num: P2, peripheral: LP_FLEXCOMM2, signal: LPFLEXCOMM_P1, pin_signal: PIO4_1/TRIG_IN7/FC2_P1/CT_INP17/SMARTDMA_PIO25/ADC0_B0}
   - {pin_num: P1, peripheral: LP_FLEXCOMM2, signal: LPFLEXCOMM_P0, pin_signal: PIO4_0/WUU0_IN18/TRIG_IN6/FC2_P0/CT_INP16/SMARTDMA_PIO24/ADC0_A0}
   - {pin_num: F8, peripheral: ADC0, signal: 'B, 21', pin_signal: PIO0_29/FC1_P5/FC0_P5/CT_INP1/ADC0_B21}
+  - {pin_num: E8, peripheral: GPIO0, signal: 'GPIO, 28', pin_signal: PIO0_28/FC1_P4/FC0_P4/CT_INP0/ADC0_B20, direction: OUTPUT, drive_strength: high}
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS ***********
  */
 /* clang-format on */
@@ -79,6 +82,8 @@ BOARD_InitDEBUG_UARTPins:
  * END ****************************************************************************************************************/
 void BOARD_InitDEBUG_UARTPins(void)
 {
+    /* Enables the clock for GPIO0: Enables clock */
+    CLOCK_EnableClock(kCLOCK_Gpio0);
     /* Enables the clock for PORT0 controller: Enables clock */
     CLOCK_EnableClock(kCLOCK_Port0);
     /* Enables the clock for PORT1: Enables clock */
@@ -87,6 +92,13 @@ void BOARD_InitDEBUG_UARTPins(void)
     CLOCK_EnableClock(kCLOCK_Port2);
     /* Enables the clock for PORT4: Enables clock */
     CLOCK_EnableClock(kCLOCK_Port4);
+
+    gpio_pin_config_t fan_config = {
+        .pinDirection = kGPIO_DigitalOutput,
+        .outputLogic = 0U
+    };
+    /* Initialize GPIO functionality on pin PIO0_28 (pin E8)  */
+    GPIO_PinInit(BOARD_INITDEBUG_UARTPINS_fan_GPIO, BOARD_INITDEBUG_UARTPINS_fan_PIN, &fan_config);
 
     /* PORT0_17 (pin A10) is configured as CT0_MAT1 */
     PORT_SetPinMux(PORT0, 17U, kPORT_MuxAlt4);
@@ -124,6 +136,19 @@ void BOARD_InitDEBUG_UARTPins(void)
     PORT0->PCR[23] = ((PORT0->PCR[23] &
                        /* Mask bits to zero which are setting */
                        (~(PORT_PCR_IBE_MASK)))
+
+                      /* Input Buffer Enable: Enables. */
+                      | PORT_PCR_IBE(PCR_IBE_ibe1));
+
+    /* PORT0_28 (pin E8) is configured as PIO0_28 */
+    PORT_SetPinMux(BOARD_INITDEBUG_UARTPINS_fan_PORT, BOARD_INITDEBUG_UARTPINS_fan_PIN, kPORT_MuxAlt0);
+
+    PORT0->PCR[28] = ((PORT0->PCR[28] &
+                       /* Mask bits to zero which are setting */
+                       (~(PORT_PCR_DSE_MASK | PORT_PCR_IBE_MASK)))
+
+                      /* Drive Strength Enable: High. */
+                      | PORT_PCR_DSE(PCR_DSE_dse1)
 
                       /* Input Buffer Enable: Enables. */
                       | PORT_PCR_IBE(PCR_IBE_ibe1));

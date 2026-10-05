@@ -25,6 +25,7 @@ extern "C" {
  */
 void BOARD_InitBootPins(void);
 
+#define PCR_DSE_dse1 0x01u        /*!<@brief Drive Strength Enable: High */
 #define PCR_IBE_ibe0 0x00u        /*!<@brief Input Buffer Enable: Disables */
 #define PCR_IBE_ibe1 0x01u        /*!<@brief Input Buffer Enable: Enables */
 #define PORT5_PCR_MUX_mux00 0x00u /*!<@brief Pin Multiplex Control: Alternative 0 (GPIO) */
@@ -87,6 +88,21 @@ void BOARD_InitBootPins(void);
 #define BOARD_INITDEBUG_UARTPINS_mq_sensor_PIN 29U                   /*!<@brief PORT pin number */
 #define BOARD_INITDEBUG_UARTPINS_mq_sensor_PIN_MASK (1U << 29U)      /*!<@brief PORT pin mask */
                                                                      /* @} */
+
+/*! @name PORT0_28 (coord E8), P0_28/J2[3]
+  @{ */
+
+/* Symbols to be used with GPIO driver */
+#define BOARD_INITDEBUG_UARTPINS_fan_GPIO GPIO0                /*!<@brief GPIO peripheral base pointer */
+#define BOARD_INITDEBUG_UARTPINS_fan_INIT_GPIO_VALUE 0U        /*!<@brief GPIO output initial state */
+#define BOARD_INITDEBUG_UARTPINS_fan_GPIO_PIN 28U              /*!<@brief GPIO pin number */
+#define BOARD_INITDEBUG_UARTPINS_fan_GPIO_PIN_MASK (1U << 28U) /*!<@brief GPIO pin mask */
+
+/* Symbols to be used with PORT driver */
+#define BOARD_INITDEBUG_UARTPINS_fan_PORT PORT0                /*!<@brief PORT peripheral base pointer */
+#define BOARD_INITDEBUG_UARTPINS_fan_PIN 28U                   /*!<@brief PORT pin number */
+#define BOARD_INITDEBUG_UARTPINS_fan_PIN_MASK (1U << 28U)      /*!<@brief PORT pin mask */
+                                                               /* @} */
 
 /*!
  * @brief Configures pin routing and optionally pin electrical features.
