@@ -35,6 +35,7 @@
 /* FAN_CTRL : GPIO0, pin 21 (board header J1[10], labeled D4) - drives MOSFET gate */
 #define FAN_GPIO      GPIO0
 #define FAN_PIN       28U
+#define MQ135_BASELINE 12
 
 
 /* Rough starting threshold in millivolts - we'll tune this once we see real
@@ -119,23 +120,75 @@ BOARD_InitDebugConsole();
         // LPADC result is left-justified */
         uint32_t rawValue16 = result.convValue;
         uint32_t rawValue = rawValue16 >> 4;
+        uint32_t difference;
 
+        if (rawValue >= MQ135_BASELINE)
+        {
+            difference = rawValue - MQ135_BASELINE;
+        }
+        else
+        {
+            difference = MQ135_BASELINE - rawValue;
+        }
+
+        uint32_t changePercent =
+            (difference * 100U) / MQ135_BASELINE;
+
+        const char *airQuality;
+
+        if (changePercent <= 30U)
+        {
+            airQuality = "GOOD";
+        }
+        else if (changePercent <= 70U)
+        {
+            airQuality = "MODERATE";
+        }
+        else if (changePercent <= 150U)
+        {
+            airQuality = "POOR";
+        }
+        else
+        {
+            airQuality = "HAZARDOUS";
+        }
+        uint32_t airScore;
+
+        if (changePercent >= 200U)
+        {
+            airScore = 0;
+        }
+        else
+        {
+            airScore = 100U - (changePercent / 2U);
+        }
         // Convert ADC reading to voltage */
         uint32_t voltage_mV = (rawValue * 3300U) / 4095U;
 
         // Undo the 10k/10k voltage divider */
         uint32_t sensorVoltage_mV = voltage_mV * 2U;
 
-        PRINTF("Raw: %u | ADC: %u mV | Sensor AO: %u mV\r\n",
+//        PRINTF("Raw: %u | ADC: %u mV | Sensor AO: %u mV\r\n",
+//               rawValue,
+//               voltage_mV,
+//               sensorVoltage_mV);
+        PRINTF("Raw: %u | Change: %u%% | Air: %s | ADC: %u mV | Sensor AO: %u mV\r\n",
                rawValue,
+               changePercent,
+               airQuality,
                voltage_mV,
                sensorVoltage_mV);
         OLED_Clear();
 
         OLED_SetCursor(0, 0);
-        OLED_Print("Sensor: ");
-        OLED_PrintInt(sensorVoltage_mV);
-        OLED_Print(" mV");
+        OLED_Print("Air Quality:");
+
+        OLED_SetCursor(0, 16);
+        OLED_Print("Score: ");
+        OLED_PrintInt(airScore);
+
+        OLED_SetCursor(0, 32);
+        OLED_Print(airQuality);
 
         status_t oled_status_loop = OLED_Update();
 
@@ -143,7 +196,7 @@ BOARD_InitDebugConsole();
 
     	SDK_DelayAtLeastUs(500000U, CLOCK_GetFreq(kCLOCK_CoreSysClk));
 
-    	if (sensorVoltage_mV >= AIR_QUALITY_THRESHOLD_MV)
+    	if (changePercent > 70U)
     	{
     	    // Poor air quality
     	    GPIO_PinWrite(LED_GOOD_GPIO, LED_GOOD_PIN, 0U);
